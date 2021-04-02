@@ -11,6 +11,7 @@ typedef char byte;
 #include <cstdio>
 #include <fstream>
 #include <unistd.h>
+#include <iostream>
 using namespace std;
 
 class FileHandle;
@@ -42,7 +43,7 @@ public:
     unsigned writePageCounter;
     unsigned appendPageCounter;
     fstream file;
-    string fName = NULL;
+    string fName;
 
     FileHandle();                                                      // Default constructor
     ~FileHandle();                                                     // Destructor

@@ -44,7 +44,7 @@ RC PagedFileManager::destroyFile(const string &fileName)
 RC PagedFileManager::openFile(const string &fileName,
   FileHandle &fileHandle)
 {
-    if (fileHandle.fName.size() != 0){
+    if (not fileHandle.fName.empty()){
       return -1; //filehandle already being used
     }
     fileHandle.fName = fileName;
@@ -86,6 +86,7 @@ FileHandle::~FileHandle()
 
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
+    char *bufptr = reinterpret_cast<char*> (data);
     file.seekg(0, file.beg);
     for( unsigned i = 0; i < pageNum; i++){
         file.seekg(PAGE_SIZE, file.cur);
@@ -93,7 +94,7 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
           return -1;
         }
     }
-    file.read(data, PAGE_SIZE);
+    file.read(bufptr, PAGE_SIZE);
     if(file.good()){
       readPageCounter++;
       return 0;
@@ -106,6 +107,7 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 
 RC FileHandle::writePage(PageNum pageNum, const void *data)
 {
+  const char *bufptr = static_cast<const char*> (data);
   file.seekg(0, file.beg);
   for( unsigned i = 0; i < pageNum; i++){
       file.seekg(PAGE_SIZE, file.cur);
@@ -113,7 +115,7 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
           return -1;
       }
   }
-  file.write(data, PAGE_SIZE);
+  file.write(bufptr, PAGE_SIZE);
   if(file.good()){
       readPageCounter++;
       return 0;
@@ -126,8 +128,9 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
 
 RC FileHandle::appendPage(const void *data)
 {
+    const char *bufptr = static_cast<const char*> (data);
     file.seekg(0, file.end);
-    file.write(data, PAGE_SIZE);
+    file.write(bufptr, PAGE_SIZE);
     appendPageCounter++;
     return -1;
 }
@@ -135,17 +138,9 @@ RC FileHandle::appendPage(const void *data)
 
 unsigned FileHandle::getNumberOfPages()
 {
-    int pages = 0;
     file.seekg(0, file.beg);
-    for(;;){
-        file.seekg(PAGE_SIZE, file.cur);
-        if(not file.good()){
-          return pages;
-        } else {
-          pages++;
-        }
-    }
-    return -1;//should never return here
+    file.seekg(0, file.end);
+    return file.tellg()%PAGE_SIZE;
 }
 
 
