@@ -117,22 +117,26 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
   }
   file.write(bufptr, PAGE_SIZE);
   if(file.good()){
-      readPageCounter++;
+      writePageCounter++;
       return 0;
   }else{
-      readPageCounter++;
+      writePageCounter++;
       return -1;
   }
 }
-
 
 RC FileHandle::appendPage(const void *data)
 {
     const char *bufptr = static_cast<const char*> (data);
     file.seekg(0, file.end);
     file.write(bufptr, PAGE_SIZE);
-    appendPageCounter++;
-    return -1;
+    if(file.good()){
+        appendPageCounter++;
+        return 0;
+    }else{
+        appendPageCounter++;
+        return -1;
+    }
 }
 
 
@@ -140,12 +144,15 @@ unsigned FileHandle::getNumberOfPages()
 {
     file.seekg(0, file.beg);
     file.seekg(0, file.end);
-    return file.tellg()%PAGE_SIZE;
+    return file.tellg()/PAGE_SIZE;
 }
 
 
 RC FileHandle::collectCounterValues(unsigned &readPageCount,
   unsigned &writePageCount, unsigned &appendPageCount)
 {
-	return -1;
+  readPageCount = readPageCounter;
+  writePageCount = writePageCounter;
+  appendPageCount = appendPageCounter;
+	return 0;
 }
