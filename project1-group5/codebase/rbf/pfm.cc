@@ -44,7 +44,7 @@ RC PagedFileManager::destroyFile(const string &fileName)
 RC PagedFileManager::openFile(const string &fileName,
   FileHandle &fileHandle)
 {
-    if (fileHandle.file != NULL){
+    if (fileHandle.file.is_open()){
       return -1; //filehandle already being used
     }
     fileHandle.file.open(fileName.c_str(),
