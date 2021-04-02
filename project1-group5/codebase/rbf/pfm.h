@@ -43,7 +43,6 @@ public:
     unsigned writePageCounter;
     unsigned appendPageCounter;
     fstream file;
-    string fName;
 
     FileHandle();                                                      // Default constructor
     ~FileHandle();                                                     // Destructor

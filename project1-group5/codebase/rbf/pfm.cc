@@ -44,12 +44,11 @@ RC PagedFileManager::destroyFile(const string &fileName)
 RC PagedFileManager::openFile(const string &fileName,
   FileHandle &fileHandle)
 {
-    if (not fileHandle.fName.empty()){
+    if (fileHandle.file != NULL){
       return -1; //filehandle already being used
     }
-    fileHandle.fName = fileName;
     fileHandle.file.open(fileName.c_str(),
-    fstream::in | fstream::out | fstream::binary);
+        fstream::in | fstream::out | fstream::binary);
     if(fileHandle.file.good()){
         return 0;
     } else {
@@ -74,7 +73,6 @@ FileHandle::FileHandle()
 	readPageCounter = 0;
 	writePageCounter = 0;
 	appendPageCounter = 0;
-  fName = "";
 }
 
 
