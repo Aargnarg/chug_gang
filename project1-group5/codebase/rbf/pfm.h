@@ -9,6 +9,7 @@ typedef char byte;
 #include <string>
 #include <climits>
 #include <cstdio>
+#include <fstream>
 #include <unistd.h>
 using namespace std;
 
@@ -40,7 +41,9 @@ public:
     unsigned readPageCounter;
     unsigned writePageCounter;
     unsigned appendPageCounter;
-    FILE *pFile;
+    unsigned totalPageCounter;
+    fstream file;
+    char *fName = NULL;
 
     FileHandle();                                                      // Default constructor
     ~FileHandle();                                                     // Destructor
