@@ -35,10 +35,10 @@ class FileHandle
 {
 public:
     // variables to keep the counter for each operation
-	unsigned readPageCounter;
-	unsigned writePageCounter;
-	unsigned appendPageCounter;
-  FILE *pFile;
+	  unsigned readPageCounter;
+	  unsigned writePageCounter;
+	  unsigned appendPageCounter;
+    FILE *pFile;
 
     FileHandle();                                                    	// Default constructor
     ~FileHandle();                                                   	// Destructor
