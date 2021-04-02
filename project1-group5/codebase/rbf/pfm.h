@@ -9,6 +9,7 @@ typedef char byte;
 #include <string>
 #include <climits>
 #include <cstdio>
+#include <unistd.h>
 using namespace std;
 
 class FileHandle;
