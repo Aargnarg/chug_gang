@@ -23,25 +23,51 @@ PagedFileManager::~PagedFileManager()
 
 RC PagedFileManager::createFile(const string &fileName)
 {
-    return -1;
+    if (FILE *file = fopen(fileName, "r"))
+    {
+       fclose(file);
+       return -1;//file exists
+    }
+    else if(file = fopen(fileName, "w"))
+    {
+      return 0;
+    }
+    else
+    {
+      return -2; //could not create file
+    }
 }
 
 
 RC PagedFileManager::destroyFile(const string &fileName)
 {
-    return -1;
+    int i = unlink(fileName);
+    if (i==0){
+      return 0;
+    } else {
+      return i;
+    }
 }
 
 
 RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
 {
-    return -1;
+    if(pFile = fopen(fileName, "r")){
+        return 0;
+    } else {
+        return -1;//file could not be opened
+    }
 }
 
 
 RC PagedFileManager::closeFile(FileHandle &fileHandle)
 {
-    return -1;
+    if (pFile) {
+        close(pFile);
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 
