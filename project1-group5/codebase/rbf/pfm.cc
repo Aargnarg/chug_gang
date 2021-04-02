@@ -23,19 +23,14 @@ PagedFileManager::~PagedFileManager()
 
 RC PagedFileManager::createFile(const string &fileName)
 {
-    if (FILE *file = fopen(fileName.c_str(), "r"))
-    {
+    if (FILE *file = fopen(fileName.c_str(), "r")){
        fclose(file);
        return -1;//file exists
-    }
-    else if((file = fopen(fileName.c_str(), "w")))
-    {
-      fclose(file);
-      return 0;
-    }
-    else
-    {
-      return -2; //could not create file
+    } else if ((file = fopen(fileName.c_str(), "w"))){
+        fclose(file);
+        return 0;
+    } else {
+        return -1; //could not create file
     }
 }
 
@@ -46,13 +41,15 @@ RC PagedFileManager::destroyFile(const string &fileName)
 }
 
 
-RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
+RC PagedFileManager::openFile(const string &fileName,
+  FileHandle &fileHandle)
 {
-    if (FileHandle.fName != NULL){
+    if (fileHandle.fName.size() != 0){
       return -1; //filehandle already being used
     }
-    FileHandle.fName = fileName.c_str();
-    fileHandle.file.open(FileHandle.fName);//assignment needed for freopen
+    fileHandle.fName = fileName;
+    fileHandle.file.open(fileName.c_str(),
+    fstream::in | fstream::out | fstream::binary);
     if(fileHandle.file.good()){
         return 0;
     } else {
@@ -77,26 +74,27 @@ FileHandle::FileHandle()
 	readPageCounter = 0;
 	writePageCounter = 0;
 	appendPageCounter = 0;
-  totalPages = 0;
+  fName = "";
 }
 
 
 FileHandle::~FileHandle()
 {
+  file.close();
 }
 
 
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
     file.seekg(0, file.beg);
-    for( int i = 0; i < pageNum; i++){
+    for( unsigned i = 0; i < pageNum; i++){
         file.seekg(PAGE_SIZE, file.cur);
-        if(not self.file.good()){
+        if(not file.good()){
           return -1;
         }
     }
-    self.file.read(data, PAGE_SIZE);
-    if(self.file.good()){
+    file.read(data, PAGE_SIZE);
+    if(file.good()){
       readPageCounter++;
       return 0;
     }else{
@@ -109,26 +107,27 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 RC FileHandle::writePage(PageNum pageNum, const void *data)
 {
   file.seekg(0, file.beg);
-  for( int i = 0; i < pageNum; i++){
+  for( unsigned i = 0; i < pageNum; i++){
       file.seekg(PAGE_SIZE, file.cur);
-      if(not self.file.good()){
-        return -1;
+      if(not file.good()){
+          return -1;
       }
   }
-  self.file.write(data, PAGE_SIZE);
-  if(self.file.good()){
-    readPageCounter++;
-    return 0;
+  file.write(data, PAGE_SIZE);
+  if(file.good()){
+      readPageCounter++;
+      return 0;
   }else{
-    readPageCounter++;
-    return -1;
+      readPageCounter++;
+      return -1;
   }
 }
 
 
 RC FileHandle::appendPage(const void *data)
 {
-    freopen(pFile, )
+    file.seekg(0, file.end);
+    file.write(data, PAGE_SIZE);
     appendPageCounter++;
     return -1;
 }
@@ -136,11 +135,22 @@ RC FileHandle::appendPage(const void *data)
 
 unsigned FileHandle::getNumberOfPages()
 {
-    return -1;
+    int pages = 0;
+    file.seekg(0, file.beg);
+    for(;;){
+        file.seekg(PAGE_SIZE, file.cur);
+        if(not file.good()){
+          return pages;
+        } else {
+          pages++;
+        }
+    }
+    return -1;//should never return here
 }
 
 
-RC FileHandle::collectCounterValues(unsigned &readPageCount, unsigned &writePageCount, unsigned &appendPageCount)
+RC FileHandle::collectCounterValues(unsigned &readPageCount,
+  unsigned &writePageCount, unsigned &appendPageCount)
 {
 	return -1;
 }

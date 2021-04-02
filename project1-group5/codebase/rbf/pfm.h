@@ -41,9 +41,8 @@ public:
     unsigned readPageCounter;
     unsigned writePageCounter;
     unsigned appendPageCounter;
-    unsigned totalPageCounter;
     fstream file;
-    char *fName = NULL;
+    string fName = NULL;
 
     FileHandle();                                                      // Default constructor
     ~FileHandle();                                                     // Destructor
