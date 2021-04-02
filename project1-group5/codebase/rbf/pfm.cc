@@ -42,12 +42,7 @@ RC PagedFileManager::createFile(const string &fileName)
 
 RC PagedFileManager::destroyFile(const string &fileName)
 {
-    int i = unlink(fileName.c_str());
-    if (i==0){
-      return 0;
-    } else {
-      return i;
-    }
+    return unlink(fileName.c_str());
 }
 
 
