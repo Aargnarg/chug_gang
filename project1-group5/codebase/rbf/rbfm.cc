@@ -12,6 +12,7 @@ RecordBasedFileManager* RecordBasedFileManager::instance()
 
 RecordBasedFileManager::RecordBasedFileManager()
 {
+    pfm = PagedFileManager::instance();
 }
 
 RecordBasedFileManager::~RecordBasedFileManager()
@@ -19,45 +20,42 @@ RecordBasedFileManager::~RecordBasedFileManager()
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
-    if (FILE *file = fopen(fileName.c_str(), "r")){
-       fclose(file);
-       return -1;//file exists
-    } else if ((file = fopen(fileName.c_str(), "w"))){
-        fclose(file);
-        return 0;
-    } else {
-        return -1; //could not create file
-    }
+    return pfm->createFile(fileName);
 }
 
 RC RecordBasedFileManager::destroyFile(const string &fileName) {
-    return unlink(fileName.c_str());
+    return pfm->destroyFile(fileName);
 }
 
 RC RecordBasedFileManager::openFile(const string &fileName, FileHandle &fileHandle) {
-    if (fileHandle.file.is_open()){
-        return -1; //filehandle already being used
-    }
-    fileHandle.file.open(fileName.c_str(),
-        fstream::in | fstream::out | fstream::binary);
-    if(fileHandle.file.good()){
-        return 0;
-    } else {
-        return -1; //file could not be opened
-    }
+    return pfm->openFile(fileName, fileHandle);
 }
 
 RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
-    fileHandle.file.close();
-    if(fileHandle.file.good()){
-        return 0;
-    } else {
-        return -1;
-    }
+    return pfm->closeFile(fileHandle);
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
+
+
+
+
+
     return -1;
+    //  Format of the data passed into the function is the following:
+    //  [n byte-null-indicators for y fields] [actual value for the first field] [actual value for the second field] ...
+    //  1) For y fields, there is n-byte-null-indicators in the beginning of each record.
+    //     The value n can be calculated as: ceil(y / 8). (e.g., 5 fields => ceil(5 / 8) = 1. 12 fields => ceil(12 / 8) = 2.)
+    //     Each bit represents whether each field value is null or not.
+    //     If k-th bit from the left is set to 1, k-th field value is null. We do not include anything in the actual data part.
+    //     If k-th bit from the left is set to 0, k-th field contains non-null values.
+    //     If there are more than 8 fields, then you need to find the corresponding byte first,
+    //     then find a corresponding bit inside that byte.
+    //  2) Actual data is a concatenation of values of the attributes.
+    //  3) For Int and Real: use 4 bytes to store the value;
+    //     For Varchar: use 4 bytes to store the length of characters, then store the actual characters.
+    //  !!! The same format is used for updateRecord(), the returned data of readRecord(), and readAttribute().
+    // For example, refer to the Q6 of Project 1 Environment document.
 }
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
