@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <climits>
+#include <cmath>
 
 #include "../rbf/pfm.h"
 
@@ -133,6 +134,9 @@ protected:
 private:
   static RecordBasedFileManager *_rbf_manager;
   PagedFileManager *pfm;
+  unsigned getSize( const vector<Attribute> &recordDescriptor,
+    const byte *buffer);
+  unsigned getSpace(const byte *buffer, const unsigned recordSize);
 };
 
 #endif

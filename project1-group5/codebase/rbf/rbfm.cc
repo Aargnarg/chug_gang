@@ -35,33 +35,108 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
     return pfm->closeFile(fileHandle);
 }
 
-RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
+RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
+   const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
+    const byte *buffer = static_cast<const byte*> (data);
+    unsigned recordSize = getSize(recordDescriptor, buffer);
+    byte targetPage[PAGE_SIZE];
 
+    unsigned totalPages = fileHandle.getNumberOfPages();
+    unsigned nextFreeSpace;
+    unsigned *dirPtr;//used for updating the directory
+    for(unsigned i = 0; i < totalPages; i++){
+        fileHandle.readPage(i, targetPage);
+        nextFreeSpace = getSpace(targetPage, recordSize);
+        if(nextFreeSpace != PAGE_SIZE + 1){
+            for(unsigned k = 0; k < recordSize; k++){
+                targetPage[nextFreeSpace] = buffer[k];
+                nextFreeSpace++;
+            }
+            dirPtr = reinterpret_cast<const unsigned*> targetPage[PAGE_SIZE-4];
+            dirValue targetPage[PAGE_SIZE - 4] += recordSize;//offset
+            numSlots += 1;//numSlots
+            
+            if(fileHandle.writePage(i, targetPage)){
+                rid.pageNum = i;
+                rid.slotNum = targetPage[PAGE_SIZE-8];
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+    }
+    //there was no page with space to insert a record
+    //must append a new page to insert the record
+    nextFreeSpace = 0;
+    for(unsigned k = 0; k < recordSize; k++){
+        targetPage[nextFreeSpace] = buffer[k];
+        nextFreeSpace++;
+    }
+    dirPtr = reinterpret_cast<unsigned*>(targetPage[PAGE_SIZE-4]);
+    *dirPtr = recordSize;
+    *(dirPtr-4) = 1;
+    *(dirPtr-8) = recordSize;
+    *(dirPtr-12) = 0;
+    rid.pageNum = fileHandle.getNumberOfPages() + 1;
+    rid.slotNum = 0;
+    return fileHandle.appendPage(targetPage);
+}
 
+unsigned RecordBasedFileManager::getSize(
+const vector<Attribute> &recordDescriptor,
+const byte *buffer)
+  {
+    unsigned numFields = recordDescriptor.size();
+    unsigned numNullBytes = ceil(numFields/8);
+    byte nullByte;
+    bool nullFlag;
+    unsigned nullFieldIndex = (numNullBytes * 8) + 1;
+    unsigned record_size = numNullBytes;
+    unsigned char k = 0x80;
+    for (unsigned i = 0; i < numNullBytes; i++){
+        nullByte = buffer[i];
+        while(k >= 1) {
+            nullFieldIndex--;
+            nullFlag = nullByte & k;
+            if ((!nullFlag) && (nullFieldIndex <= numFields)){
+                if(recordDescriptor.at(nullFieldIndex).type == 2){
+                    record_size += recordDescriptor
+                                     .at(nullFieldIndex)
+                                     .length + 4;
+                } else {
+                    record_size += 4;
+                }
+            }
+            k = k >> 1;
+        }
+    }
+    return record_size;
+}
+
+unsigned RecordBasedFileManager::getSpace(const byte *buffer, const unsigned recordSize){
+    unsigned *nextFreeSpace = reinterpret_cast<unsigned*>(buffer[PAGE_SIZE-4]);
+    unsigned *numSlots = reinterpret_cast<unsigned*>(buffer[PAGE_SIZE-8]);
+    unsigned spaceEnd = PAGE_SIZE - ((*numSlots+1) * 8) - 8;//numSlots +1 for the added slot
+    unsigned space = spaceEnd - (*nextFreeSpace);
+    if(space >= recordSize){
+        return *nextFreeSpace;
+    } else {
+        return PAGE_SIZE+1;
+    }
+}
+
+RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
+  const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
+    fileHandle.readPage(rid.pageNum, data);
+    byte *buffer = static_cast<byte*> (data);
+    unsigned *numSlots = reinterpret_cast<unsigned*>(buffer[PAGE_SIZE-8]);
 
 
 
     return -1;
-    //  Format of the data passed into the function is the following:
-    //  [n byte-null-indicators for y fields] [actual value for the first field] [actual value for the second field] ...
-    //  1) For y fields, there is n-byte-null-indicators in the beginning of each record.
-    //     The value n can be calculated as: ceil(y / 8). (e.g., 5 fields => ceil(5 / 8) = 1. 12 fields => ceil(12 / 8) = 2.)
-    //     Each bit represents whether each field value is null or not.
-    //     If k-th bit from the left is set to 1, k-th field value is null. We do not include anything in the actual data part.
-    //     If k-th bit from the left is set to 0, k-th field contains non-null values.
-    //     If there are more than 8 fields, then you need to find the corresponding byte first,
-    //     then find a corresponding bit inside that byte.
-    //  2) Actual data is a concatenation of values of the attributes.
-    //  3) For Int and Real: use 4 bytes to store the value;
-    //     For Varchar: use 4 bytes to store the length of characters, then store the actual characters.
-    //  !!! The same format is used for updateRecord(), the returned data of readRecord(), and readAttribute().
-    // For example, refer to the Q6 of Project 1 Environment document.
 }
 
-RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
-    return -1;
-}
-
-RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
+RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor,
+  const void *data) {
     return -1;
 }
