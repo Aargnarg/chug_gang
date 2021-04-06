@@ -37,41 +37,34 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
    const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {
-    const byte *buffer = static_cast<const byte*> (data);
+    const byte *buffer = static_cast<const byte*>(data);
     byte targetPage[PAGE_SIZE];
     unsigned recordSize = getSizeOfRecord(recordDescriptor, buffer);
     unsigned totalPages = fileHandle.getNumberOfPages();
     unsigned nextSpace;
     unsigned numSlots;
-    byte buf[4];
 
     for(unsigned i = 0; i < totalPages; i++){
-        fileHandle.readPage(i, targetPage);
-
-        memcpy(buf, targetPage + PAGE_SIZE - 4, 4);
-        charToUint(buf, nextSpace);
-
-        memcpy(buf, targetPage + PAGE_SIZE - 8, 4);
-        charToUint(buf, numSlots);
-
+        fileHandle.readPage(i, targetPage);//load new page
+        //check if there is enough space on the page
         if(getSpace(targetPage) >= recordSize){
+            //get nextspace of new page
+            memcpy(&nextSpace, targetPage + PAGE_SIZE - 4, 4);
+            //get numSlots of new page
+            memcpy(&numSlots, targetPage + PAGE_SIZE - 8, 4);
+            //increment numSlots
             numSlots += 1;
-
+            memcpy(targetPage + PAGE_SIZE - 8, &numSlots, 4);
+            //put data at next space
             memcpy(targetPage + nextSpace, buffer, recordSize);
-
-            intToChar(buf, nextSpace);
-            memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 4, buf, 4);
-
+            //set offset to start of new record
+            memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 4, &nextSpace, 4);
+            //set size of record
+            memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 8, &recordSize, 4);
+            //increase nextSpace by size of the new record inserted
             nextSpace += recordSize;
-            intToChar(buf, nextSpace);
-            memcpy(targetPage + PAGE_SIZE - 4, buf, 4);
-
-            intToChar(buf, numSlots);
-            memcpy(targetPage + PAGE_SIZE - 8, buf, 4);
-
-            intToChar(buf, recordSize);
-            memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 8, buf, 4);
-
+            memcpy(targetPage + PAGE_SIZE - 4, &nextSpace, 4);
+            //write the page and fill rid
             if(!fileHandle.writePage(i, targetPage)){
                 rid.pageNum = i;
                 rid.slotNum = numSlots;
@@ -83,22 +76,16 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
     }
     //there was no page with space to insert a record
     //must append a new page to insert the record
-    memcpy(targetPage, buffer, recordSize);
-
-    intToChar(buf, 1);
-    memcpy(targetPage + PAGE_SIZE - 8, buf, 4);
-
-    intToChar(buf, recordSize);
-    memcpy(targetPage + PAGE_SIZE - 4, buf, 4);
-
-    intToChar(buf, recordSize);
-    memcpy(targetPage + PAGE_SIZE - 16, buf, 4);
-
-    intToChar(buf, 0);
-    memcpy(targetPage + PAGE_SIZE - 12, buf, 4);
-
+    nextSpace = 0;
+    numSlots = 1;
+    memset(targetPage, 0, PAGE_SIZE); //make new page empty
+    memcpy(targetPage, buffer, recordSize);//copy data to begining of new page
+    memcpy(targetPage + PAGE_SIZE - 12, &nextSpace, 4);
+    memcpy(targetPage + PAGE_SIZE - 8, &numSlots, 4);
+    memcpy(targetPage + PAGE_SIZE - 4, &recordSize, 4);
+    memcpy(targetPage + PAGE_SIZE - 16, &recordSize, 4);
     rid.pageNum = totalPages;
-    rid.slotNum = 1;
+    rid.slotNum = numSlots;
     return fileHandle.appendPage(targetPage);
 }
 
@@ -107,15 +94,17 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
     unsigned numFields = recordDescriptor.size()-1;//assuming we are not passed empty record descriptor
     unsigned numNullBytes = ceil(static_cast<float>(numFields) / 8);
     byte nullByte;
+    unsigned char bitCheck;
     bool nullFlag;
     unsigned nullFieldIndex = (numNullBytes * 8);
     unsigned recordSize = numNullBytes;
-    unsigned char k = 0x80;
+
     for (unsigned i = 0; i < numNullBytes; i++){
-        nullByte = buffer[i];
-        while(k >= 1) {
+        memcpy(&nullByte, buffer+i, 1);
+        bitCheck = 128; //10000000 or 0x80
+        while(bitCheck >= 1) {
             nullFieldIndex--;
-            nullFlag = nullByte & k;
+            nullFlag = nullByte & bitCheck;
             if ((!nullFlag) && (nullFieldIndex <= numFields)){
                 if(recordDescriptor.at(nullFieldIndex).type == 2){
                     recordSize += recordDescriptor
@@ -125,7 +114,7 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
                     recordSize += 4;
                 }
             }
-            k = k >> 1;
+            bitCheck /= 2; //10000000 >> 01000000
         }
     }
     return recordSize;
@@ -134,68 +123,25 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
 unsigned RecordBasedFileManager::getSpace(const byte *targetPage){
     unsigned nextFreeSpace;
     unsigned numSlots;
-    byte buf[4];
-
-    memcpy(buf, targetPage + PAGE_SIZE - 4, 4);
-    charToUint(buf, nextFreeSpace);
-
-    memcpy(buf, targetPage + PAGE_SIZE - 8, 4);
-    charToUint(buf, numSlots);
-
+    memcpy(&nextFreeSpace, targetPage + PAGE_SIZE - 4, 4);
+    memcpy(&numSlots, targetPage + PAGE_SIZE - 8, 4);
     unsigned spaceEnd = PAGE_SIZE - ((numSlots + 1) * 8) - 8;
               //plus one to consider the new directory entry !!!
-
     return spaceEnd - nextFreeSpace;
-}
-
-void RecordBasedFileManager::intToChar(byte *buf, const unsigned n){
-    buf[0] = (n >> 24) & 0xFF;
-    buf[1] = (n >> 16) & 0xFF;
-    buf[2] = (n >> 8)  & 0xFF;
-    buf[3] =  n & 0xFF;
-}
-
-void RecordBasedFileManager::charToUint(const byte *buf, unsigned &n){
-    n = ((unsigned char)(buf[0]) << 24 |
-        (unsigned char)(buf[1]) << 16 |
-        (unsigned char)(buf[2]) << 8  |
-        (unsigned char)(buf[3]));
-}
-
-void RecordBasedFileManager::charToInt(const byte *buf, int &n){
-    n = ((unsigned char)(buf[0]) << 24 |
-        (unsigned char)(buf[1]) << 16 |
-        (unsigned char)(buf[2]) << 8  |
-        (unsigned char)(buf[3]));
-}
-
-void RecordBasedFileManager::charToFloat(const byte *buf, float &n){
-    n = ((unsigned char)(buf[0]) << 24 |
-        (unsigned char)(buf[1]) << 16 |
-        (unsigned char)(buf[2]) << 8  |
-        (unsigned char)(buf[3]));
 }
 
 
 RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
   const vector<Attribute> &recordDescriptor, const RID &rid, void *data) {
     byte targetPage[PAGE_SIZE];
-    byte buf[4];
     unsigned recordStart;
     unsigned recordSize;
-
     if(fileHandle.readPage(rid.pageNum, targetPage)){
       return -1;
     }
-
-    memcpy(buf, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
-    charToUint(buf, recordSize);
-
-    memcpy(buf, targetPage + PAGE_SIZE - 4 - (rid.slotNum * 8), 4);
-    charToUint(buf, recordStart);
-
+    memcpy(&recordSize, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
+    memcpy(&recordStart, targetPage + PAGE_SIZE - 4 - (rid.slotNum * 8), 4);
     memcpy(data, targetPage + recordStart, recordSize);
-
     return 0;
 }
 

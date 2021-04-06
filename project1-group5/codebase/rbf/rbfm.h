@@ -135,12 +135,9 @@ protected:
 private:
   static RecordBasedFileManager *_rbf_manager;
   PagedFileManager *pfm;
-  unsigned getSizeOfRecord(const vector<Attribute> &recordDescriptor, const byte *buffer);
-  unsigned getSpace(const byte *buffer);
-  void intToChar(byte *buf, const unsigned x);
-  void charToUint(const byte *buf, unsigned &n);
-  void charToInt(const byte *buf, int &n);
-  void charToFloat(const byte *buf, float &n);
+  unsigned getSizeOfRecord(const vector<Attribute> &recordDescriptor, const byte *data);
+  unsigned getSpace(const byte *data);
+
 };
 
 #endif
