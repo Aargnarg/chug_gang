@@ -2,7 +2,7 @@
 Team Number: 5
 CruzID of Submitter: naschuma
 Student Name of Submitter: Niland Schumacher
-Names of the other Team Members: Samuel Witt, Alexander Parks
+Names of the other Team Members: Samuel V. Witt, Alexander Parks
 
 
 2. Internal Record Format
