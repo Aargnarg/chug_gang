@@ -137,7 +137,6 @@ private:
   PagedFileManager *pfm;
   unsigned getSizeOfRecord(const vector<Attribute> &recordDescriptor, const byte *data);
   unsigned getSpace(const byte *data);
-
 };
 
 #endif

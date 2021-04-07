@@ -98,14 +98,19 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
     byte nullByte;
     unsigned char bitCheck;
     bool nullFlag;
-    unsigned nullFieldIndex = (numNullBytes * 8);
+    unsigned nullFieldIndex = 0;
     unsigned recordSize = numNullBytes;
+    bool flag = true;
 
     for (unsigned i = 0; i < numNullBytes; i++){
         memcpy(&nullByte, buffer+i, 1);
         bitCheck = 128; //10000000 or 0x80
         while(bitCheck >= 1) {
-            nullFieldIndex--;
+            if (flag){
+                flag = false;
+            }else{
+                nullFieldIndex++;
+            }
             nullFlag = nullByte & bitCheck;
             if ((!nullFlag) && (nullFieldIndex <= numFields)){
                 if(recordDescriptor.at(nullFieldIndex).type == 2){
@@ -140,9 +145,8 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
     byte targetPage[PAGE_SIZE];
     unsigned recordStart;
     unsigned recordSize;
-    if(fileHandle.readPage(rid.pageNum, targetPage)){
-      return -1;
-    }
+    if(fileHandle.readPage(rid.pageNum, targetPage))
+        return -1;
     memcpy(&recordSize, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
     memcpy(&recordStart, targetPage + PAGE_SIZE - 4 - (rid.slotNum * 8), 4);
     memcpy(data, targetPage + recordStart, recordSize);
@@ -153,52 +157,57 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
   const void *data) {
 
 
-    //THIS IS SOME PRETTY SHITTY CODE, prob gon redo
+    const byte *buffer = static_cast<const byte*>(data);
+    unsigned numFields = recordDescriptor.size() - 1;
+    unsigned numNullBytes = ceil(static_cast<float>(numFields) / 8);
+    byte nullByte = 0;
+    bool nullFlag;
+    unsigned nullFieldIndex = 0;
+    unsigned char bitChecker = 128;
+    int intVal;
+    float floatVal;
+    unsigned strLen;
+    char strBuffer[PAGE_SIZE];//prob doesnt need to be this big
+    unsigned offset = numNullBytes;
+    bool flag = true;
 
-    //const byte *buffer = static_cast<const byte*>(data);
-    //unsigned numFields = recordDescriptor.size();
-    //unsigned numNullBytes = ceil(static_cast<float>(numFields) / 8);
-    //byte *nullByte = 0;
-    //bool nullFlag;
-    //unsigned nullFieldIndex = (numNullBytes * 8) + 1;
-    //unsigned char k = 0x80;
-    //byte buf[4] = "";
-    //int intVal;
-    //float floatVal;
-    //unsigned offset = numNullBytes;
-    //char bigBuf[1000] = "";
+    for (unsigned i = 0; i < numNullBytes; i++){
+        memcpy(&nullByte, buffer+i, 1);
+        bitChecker = 128;
+        while(bitChecker >= 1) {
+            if (flag){
+                flag = false;
+            }else{
+                nullFieldIndex++;
+            }
+            nullFlag = nullByte & bitChecker;
+            if ((!nullFlag) && (nullFieldIndex <= numFields)){
+                cout<<recordDescriptor.at(nullFieldIndex).name<<": ";
+                if(recordDescriptor.at(nullFieldIndex).type==0) {
+                    memcpy(&intVal, buffer + offset, 4);
+                    cout << intVal <<"    ";
+                    offset += 4;
+                }else if(recordDescriptor.at(nullFieldIndex).type==1) {
+                    memcpy(&floatVal, buffer + offset, 4);
 
-    //for (unsigned i = 0; i < numNullBytes; i++){
-    //    memcpy(nullByte, buffer+i, 1);
-    //    while(k >= 1) {
-    //        nullFieldIndex--;
-    //        nullFlag = (*nullByte) & k;
-    //        if ((!nullFlag) && (nullFieldIndex <= numFields)){
-    //            cout<<recordDescriptor.at(nullFieldIndex-1).name<<": ";
-    //            if(recordDescriptor.at(nullFieldIndex-1).type==0){
-    //                memcpy(buf, buffer + offset, 4);
-    //                charToInt(buf, intVal);
-    //                cout << intVal <<"    ";
-    //                offset += 4;
-    //            }else if(recordDescriptor.at(nullFieldIndex-1).type==1){
-    //                memcpy(buf, buffer + offset, 4);
-    //                charToFloat(buf, floatVal);
-    //                cout << floatVal <<"    ";
-    //                offset += 4;
-    //            }else{
-    //              memcpy(bigBuf, buffer + offset, recordDescriptor.at(nullFieldIndex-1).length);
-    //              for(unsigned i = 0;i<recordDescriptor.at(nullFieldIndex-1).length;i++){
-    //                  cout << bigBuf[i];
-    //              }
-    //              cout<<"    ";
-    //              offset += recordDescriptor.at(nullFieldIndex-1).length;
-    //            }
-    //        } else if ((nullFlag) && (nullFieldIndex <= numFields)){
-    //            cout<<recordDescriptor.at(nullFieldIndex-1).name<<": NULL    ";
-    //        }
-    //        k = k >> 1;
-    //    }
-    //}
-    //cout<<endl;
-    return -1;
+                    cout << floatVal <<"    ";
+                    offset += 4;
+                } else {
+                  memcpy(&strLen, buffer + offset, 4);
+                  offset += 4;
+                  memcpy(strBuffer, buffer + offset, strLen);
+                  for(unsigned i = 0;i<strLen;i++){
+                      cout << strBuffer[i];
+                  }
+                  cout<<"    ";
+                  offset += strLen;
+                }
+            } else if ((nullFlag) && (nullFieldIndex <= numFields)) {
+                cout<<recordDescriptor.at(nullFieldIndex).name<<": NULL    ";
+            }
+            bitChecker /= 2;
+        }
+    }
+    cout<<endl;
+    return 0;
 }
