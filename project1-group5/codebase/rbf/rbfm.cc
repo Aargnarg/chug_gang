@@ -132,9 +132,11 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
 unsigned RecordBasedFileManager::getSpace(const byte *targetPage){
     unsigned nextFreeSpace;
     unsigned numSlots;
+    unsigned spaceEnd;
+
     memcpy(&nextFreeSpace, targetPage + PAGE_SIZE - 4, 4);
     memcpy(&numSlots, targetPage + PAGE_SIZE - 8, 4);
-    unsigned spaceEnd = PAGE_SIZE - ((numSlots + 1) * 8) - 8;
+    spaceEnd = PAGE_SIZE - ((numSlots + 1) * 8) - 8;
               //plus one to consider the new directory entry !!!
     if(spaceEnd <= nextFreeSpace)
         return 0;
@@ -147,6 +149,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
     byte targetPage[PAGE_SIZE];
     unsigned recordStart;
     unsigned recordSize;
+
     if(fileHandle.readPage(rid.pageNum, targetPage))
         return -1;
     memcpy(&recordSize, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
@@ -157,8 +160,6 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor,
   const void *data) {
-
-
     const byte *buffer = static_cast<const byte*>(data);
     unsigned numFields = recordDescriptor.size() - 1;
     unsigned numNullBytes = ceil(static_cast<float>(numFields) / 8);
