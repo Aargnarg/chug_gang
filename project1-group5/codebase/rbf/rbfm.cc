@@ -101,6 +101,7 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
     unsigned nullFieldIndex = 0;
     unsigned recordSize = numNullBytes;
     bool flag = true;
+    unsigned strlen;
 
     for (unsigned i = 0; i < numNullBytes; i++){
         memcpy(&nullByte, buffer+i, 1);
@@ -114,9 +115,8 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
             nullFlag = nullByte & bitCheck;
             if ((!nullFlag) && (nullFieldIndex <= numFields)){
                 if(recordDescriptor.at(nullFieldIndex).type == 2){
-                    recordSize += recordDescriptor
-                                     .at(nullFieldIndex)
-                                     .length + 4;
+                    memcpy(&strlen, buffer + recordSize, 4);
+                    recordSize += strlen + 4;
                           //4 bytes to store the length, and then the length
                 } else {
                     recordSize += 4;
@@ -136,6 +136,8 @@ unsigned RecordBasedFileManager::getSpace(const byte *targetPage){
     memcpy(&numSlots, targetPage + PAGE_SIZE - 8, 4);
     unsigned spaceEnd = PAGE_SIZE - ((numSlots + 1) * 8) - 8;
               //plus one to consider the new directory entry !!!
+    if(spaceEnd <= nextFreeSpace)
+        return 0;
     return spaceEnd - nextFreeSpace;
 }
 
@@ -189,18 +191,17 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
                     offset += 4;
                 }else if(recordDescriptor.at(nullFieldIndex).type==1) {
                     memcpy(&floatVal, buffer + offset, 4);
-
                     cout << floatVal <<"    ";
                     offset += 4;
                 } else {
-                  memcpy(&strLen, buffer + offset, 4);
-                  offset += 4;
-                  memcpy(strBuffer, buffer + offset, strLen);
-                  for(unsigned i = 0;i<strLen;i++){
-                      cout << strBuffer[i];
-                  }
-                  cout<<"    ";
-                  offset += strLen;
+                    memcpy(&strLen, buffer + offset, 4);
+                    offset += 4;
+                    memcpy(strBuffer, buffer + offset, strLen);
+                    for(unsigned i = 0;i<strLen;i++){
+                        cout << strBuffer[i];
+                    }
+                    cout<<"    ";
+                    offset += strLen;
                 }
             } else if ((nullFlag) && (nullFieldIndex <= numFields)) {
                 cout<<recordDescriptor.at(nullFieldIndex).name<<": NULL    ";
