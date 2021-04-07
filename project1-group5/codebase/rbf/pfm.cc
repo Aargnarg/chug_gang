@@ -104,6 +104,7 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
   file.seekg(0, file.beg);
   file.seekg(PAGE_SIZE*pageNum, file.cur);
   file.write(reinterpret_cast<const byte*> (data), PAGE_SIZE);
+  file.flush();
   if(file.good()){
       writePageCounter++;
       return 0;
@@ -117,6 +118,7 @@ RC FileHandle::appendPage(const void *data)
 {
     file.seekg(0, file.end);
     file.write(reinterpret_cast<const byte*> (data), PAGE_SIZE);
+    file.flush();
     if(file.good()){
         appendPageCounter++;
         return 0;
