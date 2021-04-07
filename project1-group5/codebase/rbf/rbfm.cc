@@ -17,6 +17,8 @@ RecordBasedFileManager::RecordBasedFileManager()
 
 RecordBasedFileManager::~RecordBasedFileManager()
 {
+    pfm = 0;
+    delete _rbf_manager;
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
@@ -44,8 +46,8 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
     unsigned nextSpace;
     unsigned numSlots;
 
-    for(unsigned i = 0; i < totalPages; i++){
-        fileHandle.readPage(i, targetPage);//load new page
+    for(unsigned i = totalPages; i>0; i--){
+        fileHandle.readPage(i-1, targetPage);//load new page
         //check if there is enough space on the page
         if(getSpace(targetPage) >= recordSize){
             //get nextspace of new page
@@ -65,8 +67,8 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
             nextSpace += recordSize;
             memcpy(targetPage + PAGE_SIZE - 4, &nextSpace, 4);
             //write the page and fill rid
-            if(!fileHandle.writePage(i, targetPage)){
-                rid.pageNum = i;
+            if(!fileHandle.writePage(i-1, targetPage)){
+                rid.pageNum = i-1;
                 rid.slotNum = numSlots;
                 return 0; //write page was successful
             } else {
@@ -110,8 +112,10 @@ unsigned RecordBasedFileManager::getSizeOfRecord(const vector<Attribute> &record
                     recordSize += recordDescriptor
                                      .at(nullFieldIndex)
                                      .length + 4;
+                          //4 bytes to store the length, and then the length
                 } else {
                     recordSize += 4;
+                    //ints and floats are 4 bytes
                 }
             }
             bitCheck /= 2; //10000000 >> 01000000

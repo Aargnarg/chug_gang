@@ -18,6 +18,7 @@ PagedFileManager::PagedFileManager()
 
 PagedFileManager::~PagedFileManager()
 {
+  delete _pf_manager;
 }
 
 
@@ -30,6 +31,7 @@ RC PagedFileManager::createFile(const string &fileName)
         fclose(file);
         return 0;
     } else {
+        fclose(file);
         return -1; //could not create file
     }
 }
@@ -85,19 +87,14 @@ FileHandle::~FileHandle()
 RC FileHandle::readPage(PageNum pageNum, void *data)
 {
     file.seekg(0, file.beg);
-    for(unsigned i = 0; i < pageNum; i++){
-        file.seekg(PAGE_SIZE, file.cur);
-        if(!file.good()){
-          return -1;
-        }
-    }
+    file.seekg(PAGE_SIZE*pageNum, file.cur);
     file.read(reinterpret_cast<char*>(data), PAGE_SIZE);
     if(file.good()){
-      readPageCounter++;
-      return 0;
+        readPageCounter++;
+        return 0;
     }else{
-      readPageCounter++;
-      return -1;
+        readPageCounter++;
+        return -1;
     }
 }
 
@@ -105,12 +102,7 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
 RC FileHandle::writePage(PageNum pageNum, const void *data)
 {
   file.seekg(0, file.beg);
-  for( unsigned i = 0; i < pageNum; i++){
-      file.seekg(PAGE_SIZE, file.cur);
-      if(not file.good()){
-          return -1;
-      }
-  }
+  file.seekg(PAGE_SIZE*pageNum, file.cur);
   file.write(reinterpret_cast<const byte*> (data), PAGE_SIZE);
   if(file.good()){
       writePageCounter++;
