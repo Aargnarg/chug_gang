@@ -3,10 +3,10 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h> 
+#include <stdio.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -48,7 +48,6 @@ int RBFTest_11(RecordBasedFileManager *rbfm) {
 	for (unsigned i = 0; i < recordDescriptor.size(); i++) {
         cout << "Attr Name: " << recordDescriptor[i].name << " Attr Type: " << (AttrType)recordDescriptor[i].type << " Attr Len: " << recordDescriptor[i].length << endl;
 	}
-
     // NULL field indicator
     int nullFieldsIndicatorActualSize = getActualByteForNullsIndicator(recordDescriptor.size());
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullFieldsIndicatorActualSize);
@@ -66,6 +65,7 @@ int RBFTest_11(RecordBasedFileManager *rbfm) {
 		assert(rc == success && "Inserting a record should not fail.");
 
 		rids.push_back(rid);
+
 	}
 
 	// Close the file
@@ -74,12 +74,12 @@ int RBFTest_11(RecordBasedFileManager *rbfm) {
 
 	free(record);
 	free(returnedData);
+	free(nullsIndicator);
 
 	assert(rids.size() == (unsigned) numRecords && "Inserting records should not fail.");
 
 	// Write RIDs to the disk. Do not use this code in your codebase. This is not a page-based operation - for the test purpose only.
 	ofstream ridsFile("test11rids", ios::out | ios::trunc | ios::binary);
-
 	if (ridsFile.is_open()) {
 		ridsFile.seekp(0, ios::beg);
 		for (int i = 0; i < numRecords; i++) {
@@ -102,12 +102,12 @@ int RBFTest_11(RecordBasedFileManager *rbfm) {
 
 int main()
 {
-    // To test the functionality of the record-based file manager 
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
-     
+    // To test the functionality of the record-based file manager
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+
     remove("test11");
     remove("test11rids");
-       
+
 	RC rcmain = RBFTest_11(rbfm);
 
 	return rcmain;

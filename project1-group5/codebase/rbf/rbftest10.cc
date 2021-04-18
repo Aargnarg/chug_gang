@@ -3,10 +3,10 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h> 
+#include <stdio.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -21,7 +21,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     // 3. Close Record-Based File
     // 4. Destroy Record-Based File
     cout << endl << "***** In RBF Test Case 10 *****" << endl;
-   
+
     RC rc;
     string fileName = "test9";
 
@@ -29,7 +29,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     FileHandle fileHandle;
     rc = rbfm->openFile(fileName, fileHandle);
     assert(rc == success && "Opening the file should not fail.");
-    
+
     int numRecords = 2000;
     void *record = malloc(1000);
     void *returnedData = malloc(1000);
@@ -68,7 +68,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
 	ifstream sizesFileRead("test9sizes", ios::in | ios::binary);
 
 	int tempSize;
-	
+
 	if (sizesFileRead.is_open()) {
 		sizesFileRead.seekg(0,ios::beg);
 		for (int i = 0; i < numRecords; i++) {
@@ -94,7 +94,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
         memset(returnedData, 0, 1000);
         rc = rbfm->readRecord(fileHandle, recordDescriptor, rids[i], returnedData);
         assert(rc == success && "Reading a record should not fail.");
-        
+
         if (i % 1000 == 0) {
             cout << endl << "Returned Data:" << endl;
             rbfm->printRecord(recordDescriptor, returnedData);
@@ -110,13 +110,13 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
             return -1;
         }
     }
-    
+
     cout << endl;
 
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success && "Closing the file should not fail.");
-    
+
     rc = rbfm->destroyFile(fileName);
     assert(rc == success && "Destroying the file should not fail.");
 
@@ -125,20 +125,21 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
 
 	free(record);
 	free(returnedData);
+  free(nullsIndicator);
 
 	cout << "RBF Test Case 10 Finished! The result will be examined." << endl << endl;
 
 	remove("test9sizes");
 	remove("test9rids");
-	
+
 	return 0;
 }
 
 int main()
 {
-    // To test the functionality of the record-based file manager 
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
-     
+    // To test the functionality of the record-based file manager
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
+
     RC rcmain = RBFTest_10(rbfm);
     return rcmain;
 }

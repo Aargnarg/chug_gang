@@ -3,10 +3,10 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h> 
+#include <stdio.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -99,16 +99,17 @@ int RBFTest_12(RecordBasedFileManager *rbfm) {
 
 	free(record);
 	free(returnedData);
+	free(nullsIndicator);
 
 	cout << "RBF Test Case 12 Finished! The result will be examined." << endl << endl;
-	
+
 	return 0;
 }
 
 int main() {
 
 	// To test the functionality of the record-based file manager
-	RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
+	RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
 
 	RC rcmain = RBFTest_12(rbfm);
 

@@ -59,11 +59,11 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle,
             memcpy(targetPage + PAGE_SIZE - 8, &numSlots, 4);
             //put data at next space
             memcpy(targetPage + nextSpace, buffer, recordSize);
-            //set offset to start of new record
+            //set start of new record
             memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 4, &nextSpace, 4);
             //set size of record
             memcpy(targetPage + PAGE_SIZE - (numSlots * 8) - 8, &recordSize, 4);
-            //increase nextSpace by size of the new record inserted
+            //increase offset by size of the new record inserted
             nextSpace += recordSize;
             memcpy(targetPage + PAGE_SIZE - 4, &nextSpace, 4);
             //write the page and fill rid
@@ -150,7 +150,8 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle,
     unsigned recordStart;
     unsigned recordSize;
 
-    if(fileHandle.readPage(rid.pageNum, targetPage))
+
+    if (fileHandle.readPage(rid.pageNum, targetPage))
         return -1;
     memcpy(&recordSize, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
     memcpy(&recordStart, targetPage + PAGE_SIZE - 4 - (rid.slotNum * 8), 4);
@@ -213,3 +214,28 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
     cout<<endl;
     return 0;
 }
+
+//RC RecordBasedFileManager::deleteRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const RID &rid){
+//    byte targetPage[PAGE_SIZE];
+//    unsigned recordStart;
+//    unsigned recordSize;
+//    unsigned recordEnd;
+//    unsigned totalSlots;
+//    unsigned temp;
+//
+//    if(fileHandle.readPage(rid.pageNum, targetPage))
+//        return -1;
+//    memcpy(&recordSize, targetPage + PAGE_SIZE - 8 - (rid.slotNum * 8), 4);
+//    memcpy(&recordStart, targetPage + PAGE_SIZE - 4 - (rid.slotNum * 8), 4);
+//    memcpy(&totalSlots, targetPage + PAGE_SIZE - 8, 4);
+//    memcpy(&spaceStart, targetPage + PAGE_SIZE - 4, 4);
+//    recordEnd = recordStart + recordSize;
+//    memcpy(targetPage + recordStart, targetPage + recordEnd, spaceStart-recordEnd);
+//    temp = PAGE_SIZE + 1;
+//    memcpy(targetPage + PAGE_SIZE -((rid.slotNum + 1) * 8), &temp, 4);
+//    
+//
+//
+//
+//    return -1;
+//}

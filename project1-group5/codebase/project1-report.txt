@@ -8,16 +8,34 @@ Names of the other Team Members: Samuel Witt, Alexander Parks
 2. Internal Record Format
 - Describe your record format design, and explain how your design provide O(1) field access. If your design does not provide O(1) field access, just mention that you haven't implemented this feature.
 - Describe how you store a VARCHAR field.
+Our file manager uses a variable length record format. Every integer and float
+field uses 4 bytes to be stored, while every VARCHAR field consists of 4 bytes
+representing the length of the field followed by the number of bytes equal to
+the length. Each record is given a record ID, which specifies the records page
+and slot numbers.
 
 
 3. Page Format
 - Describe your page format design.
+Our file pages consist of 4096 bytes in which records are packed at the
+beginning of the file, with free space in the middle of the page, and a directory
+at the end of the page. The last 8 bytes on each page are used to represent
+both the offset to the start of free space on the page and to represent the total
+number of slots. Then there are 8 bytes appended to the directory for each slot
+identifying the amount of space the slot is taking up, and the offset to the start of
+the slot.
 
 
 4. Implementation Detail
 - Be sure to supply additional pertinent implementation detail here.  You may lose credit if this section of the report is empty.
+To insert records, the program first finds a page with enough space to store the
+record by using the director on each page. To find a free page with space takes
+O(N) time, while inserting a record just takes O(1) time by use of the offset
+tracker in the directory. To find a record using a RID also takes O(1) time b/c
+the page can be accessed with the given index directly, and a pointer to the start
+of the slot is given in the directory on that page.
+
 
 
 5. Other (optional)
 - Freely use this section to tell us about other things about your Project1 solution that may help us understand and grade your solution.
-

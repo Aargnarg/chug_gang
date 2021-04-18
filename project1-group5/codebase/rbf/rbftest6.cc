@@ -2,10 +2,10 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h> 
+#include <stdio.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -53,6 +53,7 @@ int RBFTest_6(PagedFileManager *pfm)
     {
         *((char *)data+i) = i % 10 + 32;
     }
+
     rc = fileHandle.writePage(0, data);
     assert(rc == success && "Writing a page should not fail.");
 
@@ -62,7 +63,7 @@ int RBFTest_6(PagedFileManager *pfm)
     assert(rc == success && "Reading a page should not fail.");
 
     // collect after counters
-	rc = fileHandle.collectCounterValues(readPageCount1, writePageCount1, appendPageCount1);
+	  rc = fileHandle.collectCounterValues(readPageCount1, writePageCount1, appendPageCount1);
     if(rc != success)
     {
         cout << "[FAIL] collectCounterValues() failed. Test Case 6 failed." << endl;
@@ -76,7 +77,7 @@ int RBFTest_6(PagedFileManager *pfm)
     // Check the integrity
     rc = memcmp(data, buffer, PAGE_SIZE);
     assert(rc == success && "Checking the integrity of a page should not fail.");
- 
+
     // Close the file "test3"
     rc = pfm->closeFile(fileHandle);
     assert(rc == success && "Closing the file should not fail.");
@@ -92,16 +93,16 @@ int RBFTest_6(PagedFileManager *pfm)
     assert(rc == success  && "Destroying the file should not fail.");
 
 	cout << "RBF Test Case 6 Finished! The result will be examined." << endl << endl;
-    
+
     return 0;
-    
+
 }
 
 int main()
 {
 	// To test the functionality of the paged file manager
     PagedFileManager *pfm = PagedFileManager::instance();
-    
+
     RC rcmain = RBFTest_6(pfm);
     return rcmain;
 }

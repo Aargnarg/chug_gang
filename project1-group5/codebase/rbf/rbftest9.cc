@@ -3,10 +3,10 @@
 #include <string>
 #include <cassert>
 #include <sys/stat.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
-#include <stdio.h> 
+#include <stdio.h>
 
 #include "pfm.h"
 #include "rbfm.h"
@@ -21,7 +21,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     // 3. Insert Multiple Records
     // 4. Close Record-Based File
     cout << endl << "***** In RBF Test Case 9 *****" << endl;
-   
+
     RC rc;
     string fileName = "test9";
 
@@ -37,7 +37,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
     rc = rbfm->openFile(fileName, fileHandle);
     assert(rc == success && "Opening the file should not fail.");
 
-    RID rid; 
+    RID rid;
     void *record = malloc(1000);
     int numRecords = 2000;
 
@@ -49,7 +49,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         cout << "Attr Name: " << recordDescriptor[i].name << " Attr Type: " << (AttrType)recordDescriptor[i].type << " Attr Len: " << recordDescriptor[i].length << endl;
     }
 	cout << endl;
-	
+
     // NULL field indicator
     int nullFieldsIndicatorActualSize = getActualByteForNullsIndicator(recordDescriptor.size());
     unsigned char *nullsIndicator = (unsigned char *) malloc(nullFieldsIndicatorActualSize);
@@ -67,15 +67,16 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
         assert(rc == success && "Inserting a record should not fail.");
 
         rids.push_back(rid);
-        sizes.push_back(size);        
+        sizes.push_back(size);
     }
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success && "Closing the file should not fail.");
 
     free(record);
-    
-    
+    free(nullsIndicator);
+
+
     // Write RIDs to the disk. Do not use this code in your codebase. This is not a PAGE-BASED operation - for the test purpose only.
 	ofstream ridsFile("test9rids", ios::out | ios::trunc | ios::binary);
 
@@ -107,7 +108,7 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 		}
 		sizesFile.close();
 	}
-        
+
     cout << "RBF Test Case 9 Finished! The result will be examined." << endl << endl;
 
     return 0;
@@ -115,15 +116,15 @@ int RBFTest_9(RecordBasedFileManager *rbfm, vector<RID> &rids, vector<int> &size
 
 int main()
 {
-    // To test the functionality of the record-based file manager 
-    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance(); 
+    // To test the functionality of the record-based file manager
+    RecordBasedFileManager *rbfm = RecordBasedFileManager::instance();
 
     remove("test9");
     remove("test9rids");
     remove("test9sizes");
 
     vector<RID> rids;
-    vector<int> sizes;    
+    vector<int> sizes;
     RC rcmain = RBFTest_9(rbfm, rids, sizes);
     return rcmain;
 }
