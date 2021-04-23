@@ -89,11 +89,10 @@ RC FileHandle::readPage(PageNum pageNum, void *data)
     file.seekg(0, file.beg);
     file.seekg(PAGE_SIZE*pageNum, file.cur);
     file.read(reinterpret_cast<char*>(data), PAGE_SIZE);
+    readPageCounter++;
     if(file.good()){
-        readPageCounter++;
         return 0;
     }else{
-        readPageCounter++;
         return -1;
     }
 }
@@ -105,11 +104,10 @@ RC FileHandle::writePage(PageNum pageNum, const void *data)
   file.seekg(PAGE_SIZE*pageNum, file.cur);
   file.write(reinterpret_cast<const byte*> (data), PAGE_SIZE);
   file.flush();
+  writePageCounter++;
   if(file.good()){
-      writePageCounter++;
       return 0;
   }else{
-      writePageCounter++;
       return -1;
   }
 }
@@ -119,17 +117,16 @@ RC FileHandle::appendPage(const void *data)
     file.seekg(0, file.end);
     file.write(reinterpret_cast<const byte*> (data), PAGE_SIZE);
     file.flush();
+    appendPageCounter++;
     if(file.good()){
-        appendPageCounter++;
         return 0;
     }else{
-        appendPageCounter++;
         return -1;
     }
 }
 
 
-unsigned FileHandle::getNumberOfPages()
+int FileHandle::getNumberOfPages()
 {
     file.seekg(0, file.beg);
     file.seekg(0, file.end);
